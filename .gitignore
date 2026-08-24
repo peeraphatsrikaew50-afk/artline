@@ -1,0 +1,215 @@
+# ============================================================
+# .gitignore — Online Artwork Project
+# ป้องกันไฟล์ที่มีความเสี่ยงต่อการรั่วไหลและไฟล์ที่ไม่จำเป็น
+# ============================================================
+
+
+# ===== 🔴 ความเสี่ยงสูง — ไฟล์ข้อมูลสำคัญ / Credentials =====
+
+# Environment Variables (API Keys, Secrets, Passwords)
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.backup
+*.env
+
+# Configuration ที่มี Secret Keys
+config.secret.js
+config.prod.js
+secrets.js
+credentials.js
+keys.js
+
+# ===== 🔴 Google Apps Script (GAS) Source Files =====
+# ป้องกัน Logic ของ Backend และ Service Account ไม่ให้รั่วไหล
+gas/
+*.gs
+appsscript.json
+
+
+# ===== 🟠 เอกสาร Office ที่อาจมีข้อมูลส่วนตัว =====
+
+# Microsoft Word
+*.doc
+*.docx
+*.dot
+*.dotx
+*.dotm
+*.docm
+
+# Microsoft Excel
+*.xls
+*.xlsx
+*.xlsm
+*.xlsb
+*.xltx
+*.csv
+
+# Microsoft PowerPoint
+*.ppt
+*.pptx
+*.pptm
+*.pot
+*.potx
+
+# PDF
+*.pdf
+
+# Text & Note Files ที่อาจมีข้อมูลสำคัญ
+*.txt
+*.rtf
+*.odt
+*.ods
+*.odp
+
+
+# ===== 🟠 ไฟล์บันทึก / Log Files =====
+
+*.log
+*.log.*
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+# ===== 🟠 ไฟล์บีบอัด / Archive Files =====
+
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.bz2
+
+
+# ===== 🟡 ไฟล์สำรอง / Backup Files =====
+
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*~
+*.swp
+*.swo
+*_backup.*
+*_old.*
+
+
+# ===== 🟡 ระบบปฏิบัติการ (OS Files) =====
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+
+# ===== 🟡 IDE / Code Editor Settings =====
+
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains (WebStorm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+
+# ===== 🟡 Node.js / Package Files =====
+
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.output/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+
+# ===== 🟡 ไฟล์ชั่วคราว / Temp Files & Scripts =====
+
+*.tmp
+*.temp
+temp/
+tmp/
+.tmp/
+*.ps1
+
+
+# ===== 🟡 ไฟล์ขนาดใหญ่ (Binary / Media) =====
+
+# Videos
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.mkv
+*.flv
+*.webm
+
+# Audio
+*.mp3
+*.wav
+*.aac
+*.flac
+
+# Raw Images (เก็บเฉพาะไฟล์ที่จำเป็นใน public/)
+*.psd
+*.ai
+*.sketch
+*.fig
+Admin Management Workflow-*.png
+
+
+# ===== 🔵 ไฟล์เฉพาะโครงการนี้ที่ไม่ต้อง Push =====
+
+# บันทึกการวางแผน / Design Docs ที่มีข้อมูลภายใน
+MASTER-PROMP.md
+MASTER-PROMPT-webapp-*.txt
+daily_work_log_*.md
+implementation_plan.md
+project_readiness_audit.md
+02_Database_Design_ERD.md
+05_Stitch_UI_Prompts_and_Structure.md
+Online_Artwork_Phase1*.md
+
+# ไฟล์งานเก่า
+code.txt
+งาน.zip
+
+# ===== 🔵 Antigravity AI / Gemini Cache =====
+.gemini/

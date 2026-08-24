@@ -1,0 +1,90 @@
+/**
+ * api.js - Robust Client API Service Layer with Automatic Retry & Latency Handling
+ */
+
+class ApiService {
+  constructor() {
+    this.apiUrl = CONFIG.GAS_WEB_APP_URL;
+  }
+
+  /**
+   * เรียก API ของ GAS พร้อม Retry Mechanism 3 ครั้ง และ Timeout Handling
+   */
+  async request(action, params = {}, postBody = null, attempt = 1) {
+    try {
+      let url = `${this.apiUrl}?action=${encodeURIComponent(action)}`;
+      
+      // ต่อ Query Parameters
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null) {
+          url += `&${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
+        }
+      });
+
+      const options = {
+        method: postBody ? 'POST' : 'GET',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      };
+
+      if (postBody) {
+        options.body = JSON.stringify({ action, ...postBody });
+      }
+
+      // Controller สำหรับ Timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), CONFIG.FETCH_TIMEOUT);
+      options.signal = controller.signal;
+
+      const response = await fetch(url, options);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.warn(`⚠️ API Call failed [Action: ${action}] (Attempt ${attempt}/${CONFIG.MAX_RETRIES}):`, err.message);
+
+      if (attempt < CONFIG.MAX_RETRIES) {
+        // Wait exponential backoff: 1s, 2s...
+        await new Promise(res => setTimeout(res, attempt * 1000));
+        return this.request(action, params, postBody, attempt + 1);
+      }
+
+      showToast(`การเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง: ${err.message}`, 'error');
+      return { success: false, error: err.message };
+    }
+  }
+}
+
+const apiService = new ApiService();
+
+// Helper UI Toast Notification
+function showToast(message, type = 'info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  let icon = 'fa-info-circle';
+  if (type === 'success') icon = 'fa-check-circle';
+  if (type === 'error') icon = 'fa-exclamation-circle';
+
+  toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
