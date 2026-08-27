@@ -1,6 +1,6 @@
 /**
  * src/js/components/uploadModal.js
- * จัดการ Modal อัปโหลดผลงานภาพวาด
+ * จัดการ Modal อัปโหลดผลงานภาพวาด (แบบปลอดภัย ไม่กระทบระบบอื่น)
  */
 
 class UploadModalComponent {
@@ -20,7 +20,7 @@ class UploadModalComponent {
   bindEvents() {
     if (!this.fileInput || !this.dropArea) return;
 
-    // เลือกไฟล์ผ่าน Input
+    // เลือกไฟล์ผ่าน Input ปกติ
     this.fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) this.handleFileSelect(file);
@@ -46,6 +46,15 @@ class UploadModalComponent {
       const file = dt.files[0];
       if (file) this.handleFileSelect(file);
     });
+
+    // ผูก Event ให้กับปุ่มอัปโหลดเฉพาะจุดนี้เท่านั้น
+    const submitBtn = document.getElementById('btn-submit-upload');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.submitUpload();
+      });
+    }
   }
 
   handleFileSelect(file) {
@@ -97,16 +106,23 @@ class UploadModalComponent {
     }
     if (this.dropText) this.dropText.classList.remove('hidden');
     
-    document.getElementById('upload-title').value = '';
-    document.getElementById('upload-desc').value = '';
+    const titleInput = document.getElementById('upload-title');
+    const descInput = document.getElementById('upload-desc');
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
   }
 
   async submitUpload() {
-    const title = document.getElementById('upload-title').value.trim();
-    const desc = document.getElementById('upload-desc').value.trim();
-    const categoryId = document.getElementById('upload-category').value;
-    const visibility = document.getElementById('upload-visibility').value;
+    const titleEl = document.getElementById('upload-title');
+    const descEl = document.getElementById('upload-desc');
+    const categoryEl = document.getElementById('upload-category');
+    const visibilityEl = document.getElementById('upload-visibility');
     const submitBtn = document.getElementById('btn-submit-upload');
+
+    const title = titleEl ? titleEl.value.trim() : '';
+    const desc = descEl ? descEl.value.trim() : '';
+    const categoryId = categoryEl ? categoryEl.value : '';
+    const visibility = visibilityEl ? visibilityEl.value : '';
 
     if (!this.selectedFileBase64) {
       alert('กรุณาเลือกไฟล์รูปภาพ');
@@ -118,7 +134,7 @@ class UploadModalComponent {
       return;
     }
 
-    // ล็อกปุ่มป้องกันการกดซ้ำ
+    // ล็อกปุ่มกันกดซ้ำเฉพาะปุ่มนี้
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัปโหลด...';
@@ -127,33 +143,39 @@ class UploadModalComponent {
     const payload = {
       title: title,
       description: desc,
-      categoryId: categoryId,
-      visibility: visibility,
-      fileBase64: this.selectedFileBase64,
-      fileType: this.selectedFileType,
-      fileName: this.selectedFileName,
-      artistName: typeof authService !== 'undefined' ? authService.getUserName() : 'Anonymous'
+      categoryName: categoryId || 'Digital Art',
+      imageUrl: this.selectedFileBase64, // ส่งเบสหรือลิงก์รูปไปเก็บบน Google Sheet
+      artistName: (typeof authService !== 'undefined' && authService.getUserName) ? authService.getUserName() : 'Anonymous'
     };
 
-    // ส่งข้อมูลไปที่ API
-    const result = await apiService.uploadArtwork(payload);
+    try {
+      // เรียกใช้งาน Service แยกต่างหากโดยไม่กระทบโมดูลอื่น
+      const result = await apiService.uploadArtwork(payload);
 
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1.5"></i> อัปโหลดผลงาน';
-    }
-
-    if (result && result.success) {
-      alert('อัปโหลดผลงานเรียบร้อยแล้ว!');
-      this.close();
-      if (typeof galleryComponent !== 'undefined') {
-        galleryComponent.fetchAndRender();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1.5"></i> อัปโหลดผลงาน';
       }
-    } else {
-      alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + (result.error || 'ไม่สามารถเชื่อมต่อไดรฟ์ได้'));
+
+      if (result && result.success) {
+        alert('อัปโหลดผลงานเรียบร้อยแล้ว!');
+        this.close();
+        if (typeof galleryComponent !== 'undefined' && galleryComponent.fetchAndRender) {
+          galleryComponent.fetchAndRender();
+        }
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + (result?.error || 'ไม่สามารถบันทึกข้อมูลได้'));
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1.5"></i> อัปโหลดผลงาน';
+      }
+      console.error('Upload Error:', err);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
     }
   }
 }
 
-// สร้าง Instance หลักสำหรับใช้งาน
+// สร้าง Instance แยกเฉพาะตัว
 const uploadModalComponent = new UploadModalComponent();
