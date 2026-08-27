@@ -1,201 +1,155 @@
-/**
- * artworkModal.js - Artwork Lightbox Modal, Detail View, Comments, Like & Favorite Component
- */
-
 class ArtworkModalComponent {
   constructor() {
+    this.modalEl = document.getElementById('artwork-modal');
+    this.contentEl = document.getElementById('artwork-modal-content');
     this.currentArtwork = null;
   }
 
+  // เปิด Modal และดึงข้อมูลใหม่ (เพิ่ม View Count)
   async open(artworkId) {
-    const modal = document.getElementById('artwork-modal');
-    const content = document.getElementById('artwork-modal-content');
-    if (!modal || !content) return;
+    if (!this.modalEl || !this.contentEl) return;
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    content.innerHTML = `
-      <div class="p-8 text-center">
-        <div class="spinner border-4 border-purple-500 border-t-transparent rounded-full w-12 h-12 mx-auto animate-spin mb-4"></div>
-        <p class="text-slate-300">กำลังโหลดข้อมูลผลงาน...</p>
+    this.modalEl.classList.remove('hidden');
+    this.modalEl.classList.add('flex');
+    this.contentEl.innerHTML = `
+      <div class="p-12 text-center text-slate-400">
+        <i class="fas fa-spinner fa-spin text-3xl text-purple-500 mb-3"></i>
+        <p>กำลังโหลดข้อมูลผลงาน...</p>
       </div>
     `;
 
-    // Fetch details
-    const res = await apiService.request('getArtworkDetails', { id: artworkId });
-    let artData = null;
-    let comments = [];
-
-    if (res.success && res.data) {
-      artData = res.data.artwork;
-      comments = res.data.comments || [];
-    } else {
-      artData = galleryComponent.artworks.find(a => String(a.id) === String(artworkId));
-    }
-
-    if (!artData) {
-      showToast('ไม่พบข้อมูลผลงานภาพวาด', 'error');
-      this.close();
-      return;
-    }
-
-    this.currentArtwork = artData;
-    this.renderModalContent(artData, comments);
-  }
-
-  renderModalContent(art, comments) {
-    const content = document.getElementById('artwork-modal-content');
-    
-    // ✅ เพิ่ม const หน้าตัวแปร html เพื่อแก้ไข ReferenceError
-    const html = `
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-h-[85vh] overflow-y-auto">
-        <!-- Image Lightbox Section -->
-        <div class="lg:col-span-7 flex flex-col justify-center items-center bg-slate-900/60 rounded-xl overflow-hidden p-2 border border-slate-700/50">
-          <img src="${art.imageUrl || art.ImageURL}" alt="${art.title || art.Title}" class="max-h-[65vh] w-auto object-contain rounded-lg shadow-2xl">
-        </div>
-
-        <!-- Details & Interaction Section -->
-        <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
-          <div>
-            <div class="flex items-center justify-between">
-              <span class="bg-purple-600/30 text-purple-300 text-xs font-semibold px-3 py-1 rounded-full border border-purple-500/30">
-                ${art.category || art.CategoryID}
-              </span>
-              <button onclick="artworkModalComponent.close()" class="text-slate-400 hover:text-white text-xl">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-
-            <h2 class="text-2xl font-bold text-white mt-3">${art.title || art.Title}</h2>
-            <p class="text-sm text-purple-400 mt-1"><i class="fas fa-user-circle"></i> ศิลปิน: ${art.artist || art.UserID}</p>
-
-            <p class="text-sm text-slate-300 mt-3 leading-relaxed">${art.description || art.Description || 'ไม่มีคำอธิบายเพิ่มเติม'}</p>
-
-            <!-- Tags -->
-            ${art.tags && art.tags.length > 0 ? `
-              <div class="flex flex-wrap gap-2 mt-4">
-                ${art.tags.map(t => `<span class="text-xs bg-slate-800 text-cyan-400 px-2.5 py-1 rounded-md">${t}</span>`).join('')}
-              </div>
-            ` : ''}
-          </div>
-
-          <!-- Interaction Bar -->
-          <div class="pt-4 border-t border-slate-700/60 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <button onclick="artworkModalComponent.toggleLike('${art.id || art.ArtworkID}')" class="px-4 py-2 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 border border-pink-500/30 rounded-xl font-medium text-sm flex items-center gap-2 transition">
-                <i class="fas fa-heart"></i> ไลก์ (<span id="modal-like-count">${art.likeCount || 0}</span>)
-              </button>
-              <button onclick="artworkModalComponent.toggleFavorite('${art.id || art.ArtworkID}')" class="px-4 py-2 bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 border border-amber-500/30 rounded-xl font-medium text-sm flex items-center gap-2 transition">
-                <i class="fas fa-star"></i> บันทึก
-              </button>
-            </div>
-            <span class="text-xs text-slate-400"><i class="far fa-eye"></i> ${art.viewCount || 0} ยอดเข้าชม</span>
-          </div>
-
-          <!-- Comment Section -->
-          <div class="pt-4 border-t border-slate-700/60 flex-1 flex flex-col">
-            <h4 class="font-semibold text-white text-sm mb-3"><i class="far fa-comments text-purple-400"></i> ความคิดเห็น (${comments.length})</h4>
-
-            <!-- Comment List -->
-            <div class="space-y-3 max-h-40 overflow-y-auto mb-3 pr-2" id="comment-list">
-              ${comments.length === 0 ? `
-                <p class="text-xs text-slate-500 italic">ยังไม่มีความคิดเห็น เป็นคนแรกที่แสดงความคิดเห็น!</p>
-              ` : comments.map(c => `
-                <div class="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/40 text-xs">
-                  <div class="flex justify-between text-slate-400 mb-1">
-                    <span class="font-semibold text-purple-300">${c.SessionID || 'Guest'}</span>
-                    <span>${new Date(c.CreatedAt).toLocaleDateString()}</span>
-                  </div>
-                  <p class="text-slate-200">${c.Content}</p>
-                </div>
-              `).join('')}
-            </div>
-
-            <!-- Comment Input Box -->
-            <div class="flex gap-2">
-              <input type="text" id="comment-input" placeholder="เขียนความคิดเห็น..." 
-                     class="flex-1 bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-              <button onclick="artworkModalComponent.submitComment('${art.id || art.ArtworkID}')" 
-                      class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">
-                ส่ง
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    content.innerHTML = html;
-  }
-
-  async toggleLike(artworkId) {
-    const res = await apiService.request('toggleLike', {}, {
-      artworkId: artworkId,
-      userId: authManager.currentUser.userId,
-      sessionId: authManager.sessionId
-    });
-
-    if (res.success) {
-      showToast(res.liked ? 'กดถูกใจผลงานแล้ว!' : 'ยกเลิกการกดถูกใจแล้ว', 'success');
-      const countSpan = document.getElementById('modal-like-count');
-      if (countSpan) {
-        let count = parseInt(countSpan.innerText) || 0;
-        countSpan.innerText = res.liked ? count + 1 : Math.max(0, count - 1);
+    try {
+      const response = await apiService.getArtworkDetail(artworkId);
+      if (response && response.success) {
+        this.currentArtwork = response.data;
+        this.render();
+      } else {
+        this.contentEl.innerHTML = `<div class="p-8 text-center text-red-400">ไม่สามารถโหลดข้อมูลผลงานได้</div>`;
       }
-    }
-  }
-
-  async toggleFavorite(artworkId) {
-    const res = await apiService.request('toggleFavorite', {}, {
-      artworkId: artworkId,
-      userId: authManager.currentUser.userId,
-      sessionId: authManager.sessionId
-    });
-
-    if (res.success) {
-      showToast(res.favorited ? 'บันทึกเข้าในรายการโปรดเรียบร้อย' : 'ลบออกจากรายการโปรดแล้ว', 'info');
-    }
-  }
-
-  async submitComment(artworkId) {
-    const input = document.getElementById('comment-input');
-    if (!input || !input.value.trim()) return;
-
-    const content = input.value.trim();
-    input.value = '';
-
-    const res = await apiService.request('addComment', {}, {
-      artworkId: artworkId,
-      userId: authManager.currentUser.userId,
-      sessionId: authManager.currentUser.username,
-      content: content
-    });
-
-    if (res.success) {
-      showToast('แสดงความคิดเห็นสำเร็จ!', 'success');
-      const list = document.getElementById('comment-list');
-      if (list) {
-        const newEl = document.createElement('div');
-        newEl.className = 'bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/40 text-xs';
-        newEl.innerHTML = `
-          <div class="flex justify-between text-slate-400 mb-1">
-            <span class="font-semibold text-purple-300">${authManager.currentUser.username}</span>
-            <span>เพิ่งเมื่อครู่</span>
-          </div>
-          <p class="text-slate-200">${content}</p>
-        `;
-        list.appendChild(newEl);
-      }
+    } catch (err) {
+      console.error(err);
+      this.contentEl.innerHTML = `<div class="p-8 text-center text-red-400">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</div>`;
     }
   }
 
   close() {
-    const modal = document.getElementById('artwork-modal');
-    if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
+    if (!this.modalEl) return;
+    this.modalEl.classList.add('hidden');
+    this.modalEl.classList.remove('flex');
+  }
+
+  // แสดงผล UI ภายใน Modal
+  render() {
+    const item = this.currentArtwork;
+    if (!item) return;
+
+    const currentRole = authService ? authService.getCurrentRole() : 'Guest';
+    const commentsHtml = (item.comments || []).map(c => `
+      <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+        <div class="flex justify-between text-slate-400">
+          <span class="font-semibold text-purple-300">${c.user || 'ผู้ใช้งาน'} (${c.role || 'Guest'})</span>
+          <span>${c.timestamp || ''}</span>
+        </div>
+        <p class="text-slate-200">${c.text}</p>
+      </div>
+    `).join('') || `<p class="text-xs text-slate-500 italic">ยังไม่มีความคิดเห็น เป็นคนแรกที่แสดงความคิดเห็น!</p>`;
+
+    this.contentEl.innerHTML = `
+      <div class="relative flex flex-col md:flex-row max-h-[90vh] overflow-y-auto md:overflow-hidden">
+        <button onclick="artworkModalComponent.close()" class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fas fa-times"></i>
+        </button>
+
+        <!-- ภาพผลงาน -->
+        <div class="md:w-3/5 bg-slate-950 flex items-center justify-center p-4 min-h-[300px]">
+          <img src="${item.imageUrl}" alt="${item.title}" class="max-h-[75vh] w-auto object-contain rounded-lg">
+        </div>
+
+        <!-- รายละเอียดและปุ่มโต้ตอบ -->
+        <div class="md:w-2/5 p-6 flex flex-col justify-between bg-slate-900/40 space-y-4 overflow-y-auto">
+          <div class="space-y-4">
+            <div>
+              <span class="inline-block px-2.5 py-1 text-xs rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 mb-2">
+                ${item.categoryName || 'Digital Art'}
+              </span>
+              <h3 class="text-xl font-bold text-white">${item.title || 'ไม่มีชื่อผลงาน'}</h3>
+              <p class="text-xs text-purple-300 mt-1"><i class="fas fa-paint-brush mr-1"></i> ศิลปิน: ${item.artistName || 'ไม่ระบุ'}</p>
+            </div>
+
+            <p class="text-slate-300 text-xs leading-relaxed">${item.description || 'ไม่มีคำอธิบายผลงาน'}</p>
+
+            <!-- ปุ่ม Actions & Views -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+              <div class="flex items-center gap-2">
+                <button onclick="artworkModalComponent.toggleLike()" class="px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/30 text-pink-400 border border-pink-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                  <i class="fas fa-heart"></i> ไลก์ (${item.likes || 0})
+                </button>
+                <button onclick="artworkModalComponent.toggleFavorite()" class="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                  <i class="fas fa-star"></i> บันทึก
+                </button>
+              </div>
+              <span class="text-xs text-slate-400"><i class="fas fa-eye mr-1"></i> ${item.views || 0} ยอดเข้าชม</span>
+            </div>
+
+            <!-- กล่องความคิดเห็น -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <h4 class="text-xs font-bold text-slate-300">ความคิดเห็น (${(item.comments || []).length})</h4>
+              <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                ${commentsHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- ฟอร์มพิมพ์คอมเมนต์ -->
+          <div class="pt-2 border-t border-slate-800 flex gap-2">
+            <input type="text" id="modal-comment-input" placeholder="เขียนความคิดเห็น..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+            <button onclick="artworkModalComponent.submitComment()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-xl text-xs font-semibold transition">
+              ส่ง
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // กดถูกใจ
+  async toggleLike() {
+    if (!this.currentArtwork) return;
+    const role = authService ? authService.getCurrentRole() : 'Guest';
+    try {
+      const res = await apiService.toggleLike(this.currentArtwork.id, role);
+      if (res && res.success) {
+        this.currentArtwork.likes = res.likes;
+        this.render();
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // กดบันทึกเป็นของโปรด
+  async toggleFavorite() {
+    if (!this.currentArtwork) return;
+    const role = authService ? authService.getCurrentRole() : 'Guest';
+    try {
+      const res = await apiService.toggleFavorite(this.currentArtwork.id, role);
+      if (res && res.success) {
+        alert(res.message || 'บันทึกสำเร็จ');
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // ส่งคอมเมนต์
+  async submitComment() {
+    const input = document.getElementById('modal-comment-input');
+    if (!input || !input.value.trim() || !this.currentArtwork) return;
+
+    const role = authService ? authService.getCurrentRole() : 'Guest';
+    try {
+      const res = await apiService.addComment(this.currentArtwork.id, input.value.trim(), role);
+      if (res && res.success) {
+        this.currentArtwork.comments = res.comments;
+        this.render();
+      }
+    } catch (e) { console.error(e); }
   }
 }
 
