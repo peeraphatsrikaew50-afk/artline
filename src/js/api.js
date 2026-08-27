@@ -1,6 +1,7 @@
 class ApiService {
   constructor() {
-    this.baseUrl = CONFIG.WEB_APP_URL; // แก้ให้ตรงกับ config.js เรียบร้อยแล้ว
+    // ฝัง URL ตรงๆ ตัดปัญหาค่า undefined และปัญหาแคชจากไฟล์ config
+    this.baseUrl = "https://script.google.com/macros/s/AKfycbxMv5yT3L8CAMMOC0-dvrzANhR5p5h7zj7rUsN3KwvAFKWgVgPrdfs44it49FP_flBX/exec";
   }
 
   // ฟังก์ชันส่ง HTTP Request หลักที่ปรับแก้เพื่อเลี่ยง CORS ของ Google Apps Script
