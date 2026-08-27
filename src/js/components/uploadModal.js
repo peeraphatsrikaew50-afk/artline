@@ -18,6 +18,28 @@ class UploadModalComponent {
   }
 
   bindEvents() {
+    // 1. ดักจับปุ่ม "อัปโหลดผลงาน" ที่อยู่ขวาบน เพื่อสั่งเปิด Modal
+    // รองรับทั้งกรณีหาด้วย ID หรือดึงจากปุ่มที่มีไอคอนคลาวด์อัปโหลด
+    const openModalBtns = document.querySelectorAll('#nav-btn-upload, button');
+    openModalBtns.forEach(btn => {
+      // เช็กว่าเป็นปุ่มอัปโหลดขวาบน (สังเกตจากข้อความหรือไอคอน)
+      if (btn.textContent.includes('อัปโหลดผลงาน') || btn.id === 'nav-btn-upload' || btn.innerHTML.includes('fa-cloud-upload-alt')) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.open();
+        });
+      }
+    });
+
+    // ดักจับปุ่มปิด Modal (ปุ่มกากบาท หรือปุ่มยกเลิก ถ้ามี)
+    const closeBtns = document.querySelectorAll('#close-upload-modal, .close-modal-btn');
+    closeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.close();
+      });
+    });
+
     if (!this.fileInput || !this.dropArea) return;
 
     // เลือกไฟล์ผ่าน Input ปกติ
@@ -47,7 +69,7 @@ class UploadModalComponent {
       if (file) this.handleFileSelect(file);
     });
 
-    // ผูก Event ให้กับปุ่มอัปโหลดเฉพาะจุดนี้เท่านั้น
+    // ผูก Event ให้กับปุ่มส่งข้อมูลอัปโหลด
     const submitBtn = document.getElementById('btn-submit-upload');
     if (submitBtn) {
       submitBtn.addEventListener('click', (e) => {
@@ -144,12 +166,11 @@ class UploadModalComponent {
       title: title,
       description: desc,
       categoryName: categoryId || 'Digital Art',
-      imageUrl: this.selectedFileBase64, // ส่งเบสหรือลิงก์รูปไปเก็บบน Google Sheet
+      imageUrl: this.selectedFileBase64,
       artistName: (typeof authService !== 'undefined' && authService.getUserName) ? authService.getUserName() : 'Anonymous'
     };
 
     try {
-      // เรียกใช้งาน Service แยกต่างหากโดยไม่กระทบโมดูลอื่น
       const result = await apiService.uploadArtwork(payload);
 
       if (submitBtn) {
