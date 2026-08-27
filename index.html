@@ -13,8 +13,8 @@
   <!-- Chart.js for Dashboard Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Custom Styles -->
-  <link rel="stylesheet" href="style.css">
+  <!-- Custom Styles (ปรับพาทถูกต้องตามโครงสร้างโฟลเดอร์) -->
+  <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
@@ -251,15 +251,15 @@
     </div>
   </div>
 
-  <!-- JavaScript Modules (ปรับแก้ไขพาทไฟล์ให้ดึงจาก Root โดยตรง) -->
-  <script src="config.js"></script>
-  <script src="api.js"></script>
-  <script src="auth.js"></script>
-  <script src="gallery.js"></script>
-  <script src="artworkModal.js"></script>
-  <script src="uploadModal.js"></script>
-  <script src="dashboard.js"></script>
-  <script src="app.js"></script>
+  <!-- JavaScript Modules (แก้ไขพาทระบุโฟลเดอร์ src/js/ ให้ถูกต้องสมบูรณ์) -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/api.js"></script>
+  <script src="src/js/auth.js"></script>
+  <script src="src/js/components/gallery.js"></script>
+  <script src="src/js/components/artworkModal.js"></script>
+  <script src="src/js/components/uploadModal.js"></script>
+  <script src="src/js/components/dashboard.js"></script>
+  <script src="src/js/app.js"></script>
 
 </body>
 </html>
