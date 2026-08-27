@@ -1,6 +1,6 @@
 class ApiService {
   constructor() {
-    this.baseUrl = CONFIG.API_BASE_URL;
+    this.baseUrl = CONFIG.WEB_APP_URL; // แก้ให้ตรงกับ config.js เรียบร้อยแล้ว
   }
 
   // ฟังก์ชันส่ง HTTP Request หลักที่ปรับแก้เพื่อเลี่ยง CORS ของ Google Apps Script
@@ -13,8 +13,6 @@ class ApiService {
       
       const fetchOptions = {
         method: method,
-        // ใช้โหมด no-cors จะช่วยให้เบราว์เซอร์ไม่บล็อก แต่จะไม่สามารถอ่าน response.json() ตรงๆ ได้
-        // ดังนั้นเราจึงต้องใช้ Google Apps Script แบบส่งผ่าน text กลับมาแทน
       };
 
       if (method === 'POST' && bodyData) {
@@ -26,12 +24,10 @@ class ApiService {
 
       const response = await fetch(url, fetchOptions);
       
-      // ถ้าเป็นโหมดปกติ ลองแปลงเป็น JSON หากไม่ได้ ให้ดึงแบบข้อความ
       const textData = await response.text();
       try {
         return JSON.parse(textData);
       } catch (e) {
-        // กรณี Google Apps Script ส่งหน้า HTML หรือ Redirect กลับมา
         console.warn("Response is not JSON, raw text:", textData);
         return { success: false, message: "Invalid JSON response from server" };
       }
