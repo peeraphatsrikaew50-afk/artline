@@ -4,8 +4,8 @@
 
 class ApiService {
   constructor() {
-    // 📍 บรรทัดที่ 7: ใส่ Web App URL ตรงนี้ครับ
-    this.apiUrl = "https://script.google.com/macros/s/AKfycbwxsa4BrvFNa_v6ASozhsfIbJY0p6XgTlLFMccA88dFA8vt7xgEz7cw5jFvE4qI3zlW/exec";
+    // ✅ อัปเดตเป็น Web App URL ใหม่ล่าสุดแล้วครับ
+    this.apiUrl = "https://script.google.com/macros/s/AKfycbzEBIYD_ZU3lFNfnNsd7HzuguH7APvlORu8MUh2as6LO9VVbYcadsp0DBidfQVsHA-p/exec";
   }
 
   /**
