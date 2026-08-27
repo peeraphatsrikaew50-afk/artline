@@ -4,41 +4,43 @@
  */
 
 const apiService = {
-  // ดึงรายการภาพวาดทั้งหมดจาก Google Sheets
-  async getArtworks() {
+  // ฟังก์ชันสเปกกลางสำหรับเรียก API ทั่วไป (แก้ปัญหา apiService.request is not a function)
+  async request(action, payload = null) {
     try {
-      const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getArtworks`);
-      const result = await response.json();
-      return result;
+      if (payload) {
+        // กรณีส่งข้อมูลแบบ POST
+        const response = await fetch(CONFIG.SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            action: action,
+            payload: payload
+          })
+        });
+        return await response.json();
+      } else {
+        // กรณีดึงข้อมูลแบบ GET
+        const response = await fetch(`${CONFIG.SCRIPT_URL}?action=${action}`);
+        return await response.json();
+      }
     } catch (error) {
-      console.error("Fetch Artworks Error:", error);
+      console.error(`API Request Error (${action}):`, error);
       throw error;
     }
   },
 
-  // อัปโหลดภาพวาดใหม่เข้า Google Drive และบันทึกข้อมูลลง Google Sheets
-  async uploadArtwork(payload) {
-    try {
-      // ใช้ Content-Type เป็น text/plain;charset=utf-8 เพื่อเลี่ยงปัญหาการบล็อก CORS จาก Google Apps Script
-      const response = await fetch(CONFIG.SCRIPT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify({
-          action: "uploadArtwork",
-          payload: payload
-        })
-      });
+  // ดึงรายการภาพวาดทั้งหมด
+  async getArtworks() {
+    return await this.request("getArtworks");
+  },
 
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error("Upload Error:", error);
-      throw error;
-    }
+  // อัปโหลดภาพวาดใหม่
+  async uploadArtwork(payload) {
+    return await this.request("uploadArtwork", payload);
   }
 };
 
-// ประกาศ Alias ตัวแปรเพิ่มเติมเพื่อป้องกันปัญหากรณีไฟล์อื่นเรียกใช้ชื่อ API แบบตัวพิมพ์ใหญ่
+// ประกาศ Alias ตัวแปรเพื่อรองรับการเรียกใช้แบบตัวพิมพ์ใหญ่
 const API = apiService;
