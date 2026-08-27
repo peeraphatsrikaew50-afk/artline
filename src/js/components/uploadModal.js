@@ -1,5 +1,5 @@
 // ==========================================
-// UPLOAD MODAL COMPONENT
+// UPLOAD MODAL COMPONENT (File Upload Version)
 // ==========================================
 
 const uploadModalComponent = {
@@ -7,7 +7,6 @@ const uploadModalComponent = {
     const modal = document.getElementById('upload-modal');
     if (!modal) return;
 
-    // เติมโครงสร้างฟอร์มลงใน Modal Container ถ้ายังไม่มี
     modal.innerHTML = `
       <div class="glass-panel border border-slate-700/80 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-fade-in relative">
         <button onclick="uploadModalComponent.close()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
@@ -45,8 +44,9 @@ const uploadModalComponent = {
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">ลิงก์รูปภาพ (Image URL)</label>
-            <input type="url" id="up-image" placeholder="https://..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+            <label class="block text-xs font-medium text-slate-300 mb-1">เลือกไฟล์รูปภาพ</label>
+            <input type="file" id="up-file" accept="image/*" required 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
           </div>
 
           <div class="flex justify-end gap-3 pt-2">
@@ -72,52 +72,70 @@ const uploadModalComponent = {
   submit: async function(event) {
     event.preventDefault();
     
-    // ดึงค่าตัวแปร WEB_APP_URL จากไฟล์ config.js ของคุณ
-    const url = typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ""; 
+    const url = typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL ? CONFIG.WEB_APP_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : "");
     if (!url) {
       alert("ไม่พบ URL ของ Apps Script กรุณาตรวจสอบไฟล์ config.js");
       return;
     }
 
-    const payload = {
-      title: document.getElementById('up-title').value,
-      description: document.getElementById('up-desc').value,
-      categoryName: document.getElementById('up-category').value,
-      artistName: document.getElementById('up-artist').value,
-      imageUrl: document.getElementById('up-image').value
+    const fileInput = document.getElementById('up-file');
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("กรุณาเลือกไฟล์รูปภาพ");
+      return;
+    }
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.textContent = "กำลังแปลงไฟล์และอัปโหลด...";
+    submitBtn.disabled = true;
+
+    // แปลงไฟล์รูปภาพเป็น Base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async function() {
+      const base64Data = reader.result;
+
+      const payload = {
+        title: document.getElementById('up-title').value,
+        description: document.getElementById('up-desc').value,
+        categoryName: document.getElementById('up-category').value,
+        artistName: document.getElementById('up-artist').value,
+        imageFile: base64Data,      // ส่งข้อมูลรูปภาพแบบ Base64 ไปหลังบ้าน
+        fileName: file.name
+      };
+
+      try {
+        const response = await fetch(url + "?action=uploadArtwork", {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert("อัปโหลดผลงานสำเร็จ!");
+          uploadModalComponent.close();
+          location.reload();
+        } else {
+          alert("อัปโหลดไม่สำเร็จ: " + (result.message || "เกิดข้อผิดพลาด"));
+          submitBtn.textContent = "ยืนยันอัปโหลด";
+          submitBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error("Upload Error:", err);
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+        submitBtn.textContent = "ยืนยันอัปโหลด";
+        submitBtn.disabled = false;
+      }
     };
 
-    try {
-      const submitBtn = event.target.querySelector('button[type="submit"]');
-      submitBtn.textContent = "กำลังอัปโหลด...";
-      submitBtn.disabled = true;
-
-      const response = await fetch(url + "?action=uploadArtwork", {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        alert("อัปโหลดผลงานสำเร็จ!");
-        uploadModalComponent.close();
-        location.reload(); // รีเฟรชหน้าจอเพื่อดึงข้อมูลใหม่มาแสดง
-      } else {
-        alert("อัปโหลดไม่สำเร็จ: " + (result.message || "เกิดข้อผิดพลาด"));
-        submitBtn.textContent = "ยืนยันอัปโหลด";
-        submitBtn.disabled = false;
-      }
-    } catch (err) {
-      console.error("Upload Error:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
-      const submitBtn = event.target.querySelector('button[type="submit"]');
-      if(submitBtn) {
-        submitBtn.textContent = "ยืนยันอัปโหลด";
-        submitBtn.disabled = false;
-      }
-    }
+    reader.onerror = function(error) {
+      console.error("FileReader Error: ", error);
+      alert("เกิดข้อผิดพลาดในการอ่านไฟล์");
+      submitBtn.textContent = "ยืนยันอัปโหลด";
+      submitBtn.disabled = false;
+    };
   }
 };
