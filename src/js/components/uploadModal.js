@@ -4,6 +4,12 @@
 
 const uploadModalComponent = {
   open: function() {
+    // 🔒 ป้องกันไม่ให้ Guest หรือ Member เปิด Modal อัปโหลด
+    if (typeof authManager !== 'undefined' && !authManager.canUpload()) {
+      alert('ผู้เยี่ยมชม (Guest) และสมาชิก (Member) ไม่สามารถอัปโหลดผลงานได้ครับ (สำหรับ Artist และ Admin เท่านั้น)');
+      return;
+    }
+
     const modal = document.getElementById('upload-modal');
     if (!modal) return;
 
@@ -39,7 +45,7 @@ const uploadModalComponent = {
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อศิลปิน</label>
-              <input type="text" id="up-artist" value="Peeraphat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+              <input type="text" id="up-artist" value="${typeof authManager !== 'undefined' ? authManager.currentUser.username : 'Peeraphat'}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
             </div>
           </div>
 
@@ -89,7 +95,6 @@ const uploadModalComponent = {
     submitBtn.textContent = "กำลังแปลงไฟล์และอัปโหลด...";
     submitBtn.disabled = true;
 
-    // แปลงไฟล์รูปภาพเป็น Base64
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async function() {
@@ -100,8 +105,10 @@ const uploadModalComponent = {
         description: document.getElementById('up-desc').value,
         categoryName: document.getElementById('up-category').value,
         artistName: document.getElementById('up-artist').value,
-        imageFile: base64Data,      // ส่งข้อมูลรูปภาพแบบ Base64 ไปหลังบ้าน
-        fileName: file.name
+        imageFile: base64Data,      
+        fileName: file.name,
+        // ส่ง Role ปัจจุบันไปตรวจสอบที่หลังบ้านด้วย
+        userRole: typeof authManager !== 'undefined' ? authManager.currentUser.role : 'Guest'
       };
 
       try {
