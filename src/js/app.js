@@ -48,8 +48,11 @@ function initAuthUI() {
 
   const uploadNavBtn = document.getElementById('nav-btn-upload');
   if (uploadNavBtn) {
+    // ปรับแก้ตรงนี้: ซ่อนปุ่มอัปโหลดไปเลยหากไม่มีสิทธิ์ (Guest หรือ Member)
     if (!authManager.canUpload()) {
-      uploadNavBtn.classList.add('opacity-50');
+      uploadNavBtn.style.display = 'none';
+    } else {
+      uploadNavBtn.style.display = 'flex';
     }
   }
 }
