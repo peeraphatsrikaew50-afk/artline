@@ -1,202 +1,123 @@
-/**
- * src/js/components/uploadModal.js
- * จัดการ Modal อัปโหลดผลงานภาพวาด (แบบปลอดภัย ไม่กระทบระบบอื่น)
- */
+// ==========================================
+// UPLOAD MODAL COMPONENT
+// ==========================================
 
-class UploadModalComponent {
-  constructor() {
-    this.modal = document.getElementById('upload-modal');
-    this.fileInput = document.getElementById('file-input');
-    this.dropArea = document.getElementById('drop-area');
-    this.previewImg = document.getElementById('image-preview');
-    this.dropText = document.getElementById('drop-text');
-    this.selectedFileBase64 = null;
-    this.selectedFileType = null;
-    this.selectedFileName = null;
+const uploadModalComponent = {
+  open: function() {
+    const modal = document.getElementById('upload-modal');
+    if (!modal) return;
 
-    this.bindEvents();
-  }
+    // เติมโครงสร้างฟอร์มลงใน Modal Container ถ้ายังไม่มี
+    modal.innerHTML = `
+      <div class="glass-panel border border-slate-700/80 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-fade-in relative">
+        <button onclick="uploadModalComponent.close()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+          <i class="fas fa-times text-lg"></i>
+        </button>
+        
+        <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fas fa-cloud-upload-alt text-purple-400"></i> อัปโหลดผลงานศิลปะ
+        </h3>
 
-  bindEvents() {
-    // 1. ดักจับปุ่ม "อัปโหลดผลงาน" ที่อยู่ขวาบน เพื่อสั่งเปิด Modal
-    // รองรับทั้งกรณีหาด้วย ID หรือดึงจากปุ่มที่มีไอคอนคลาวด์อัปโหลด
-    const openModalBtns = document.querySelectorAll('#nav-btn-upload, button');
-    openModalBtns.forEach(btn => {
-      // เช็กว่าเป็นปุ่มอัปโหลดขวาบน (สังเกตจากข้อความหรือไอคอน)
-      if (btn.textContent.includes('อัปโหลดผลงาน') || btn.id === 'nav-btn-upload' || btn.innerHTML.includes('fa-cloud-upload-alt')) {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          this.open();
-        });
-      }
-    });
+        <form id="upload-form" onsubmit="uploadModalComponent.submit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อผลงาน</label>
+            <input type="text" id="up-title" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+          </div>
 
-    // ดักจับปุ่มปิด Modal (ปุ่มกากบาท หรือปุ่มยกเลิก ถ้ามี)
-    const closeBtns = document.querySelectorAll('#close-upload-modal, .close-modal-btn');
-    closeBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.close();
-      });
-    });
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">คำอธิบาย</label>
+            <textarea id="up-desc" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"></textarea>
+          </div>
 
-    if (!this.fileInput || !this.dropArea) return;
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">หมวดหมู่</label>
+              <select id="up-category" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-purple-500">
+                <option value="Digital Art">Digital Art</option>
+                <option value="Illustration">Illustration</option>
+                <option value="Concept Art">Concept Art</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อศิลปิน</label>
+              <input type="text" id="up-artist" value="Peeraphat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+            </div>
+          </div>
 
-    // เลือกไฟล์ผ่าน Input ปกติ
-    this.fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) this.handleFileSelect(file);
-    });
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">ลิงก์รูปภาพ (Image URL)</label>
+            <input type="url" id="up-image" placeholder="https://..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+          </div>
 
-    // Drag & Drop File
-    ['dragenter', 'dragover'].forEach(eventName => {
-      this.dropArea.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        this.dropArea.classList.add('border-purple-500', 'bg-purple-500/10');
-      }, false);
-    });
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="uploadModalComponent.close()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition">ยกเลิก</button>
+            <button type="submit" class="px-4 py-2 rounded-xl text-sm bg-purple-600 hover:bg-purple-500 text-white font-semibold transition">ยืนยันอัปโหลด</button>
+          </div>
+        </form>
+      </div>
+    `;
 
-    ['dragleave', 'drop'].forEach(eventName => {
-      this.dropArea.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        this.dropArea.classList.remove('border-purple-500', 'bg-purple-500/10');
-      }, false);
-    });
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
 
-    this.dropArea.addEventListener('drop', (e) => {
-      const dt = e.dataTransfer;
-      const file = dt.files[0];
-      if (file) this.handleFileSelect(file);
-    });
-
-    // ผูก Event ให้กับปุ่มส่งข้อมูลอัปโหลด
-    const submitBtn = document.getElementById('btn-submit-upload');
-    if (submitBtn) {
-      submitBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.submitUpload();
-      });
+  close: function() {
+    const modal = document.getElementById('upload-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
-  }
+  },
 
-  handleFileSelect(file) {
-    if (!file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
-      return;
-    }
-
-    this.selectedFileType = file.type;
-    this.selectedFileName = file.name;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.selectedFileBase64 = e.target.result;
-      if (this.previewImg) {
-        this.previewImg.src = e.target.result;
-        this.previewImg.classList.remove('hidden');
-      }
-      if (this.dropText) {
-        this.dropText.classList.add('hidden');
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-
-  open() {
-    if (this.modal) {
-      this.modal.classList.remove('hidden');
-      this.modal.classList.add('flex');
-    }
-  }
-
-  close() {
-    if (this.modal) {
-      this.modal.classList.add('hidden');
-      this.modal.classList.remove('flex');
-      this.resetForm();
-    }
-  }
-
-  resetForm() {
-    this.selectedFileBase64 = null;
-    this.selectedFileType = null;
-    this.selectedFileName = null;
-    if (this.fileInput) this.fileInput.value = '';
-    if (this.previewImg) {
-      this.previewImg.src = '';
-      this.previewImg.classList.add('hidden');
-    }
-    if (this.dropText) this.dropText.classList.remove('hidden');
+  submit: async function(event) {
+    event.preventDefault();
     
-    const titleInput = document.getElementById('upload-title');
-    const descInput = document.getElementById('upload-desc');
-    if (titleInput) titleInput.value = '';
-    if (descInput) descInput.value = '';
-  }
-
-  async submitUpload() {
-    const titleEl = document.getElementById('upload-title');
-    const descEl = document.getElementById('upload-desc');
-    const categoryEl = document.getElementById('upload-category');
-    const visibilityEl = document.getElementById('upload-visibility');
-    const submitBtn = document.getElementById('btn-submit-upload');
-
-    const title = titleEl ? titleEl.value.trim() : '';
-    const desc = descEl ? descEl.value.trim() : '';
-    const categoryId = categoryEl ? categoryEl.value : '';
-    const visibility = visibilityEl ? visibilityEl.value : '';
-
-    if (!this.selectedFileBase64) {
-      alert('กรุณาเลือกไฟล์รูปภาพ');
+    // ดึงค่าตัวแปร WEB_APP_URL จากไฟล์ config.js ของคุณ
+    const url = typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ""; 
+    if (!url) {
+      alert("ไม่พบ URL ของ Apps Script กรุณาตรวจสอบไฟล์ config.js");
       return;
-    }
-
-    if (!title) {
-      alert('กรุณากรอกชื่อผลงาน');
-      return;
-    }
-
-    // ล็อกปุ่มกันกดซ้ำเฉพาะปุ่มนี้
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัปโหลด...';
     }
 
     const payload = {
-      title: title,
-      description: desc,
-      categoryName: categoryId || 'Digital Art',
-      imageUrl: this.selectedFileBase64,
-      artistName: (typeof authService !== 'undefined' && authService.getUserName) ? authService.getUserName() : 'Anonymous'
+      title: document.getElementById('up-title').value,
+      description: document.getElementById('up-desc').value,
+      categoryName: document.getElementById('up-category').value,
+      artistName: document.getElementById('up-artist').value,
+      imageUrl: document.getElementById('up-image').value
     };
 
     try {
-      const result = await apiService.uploadArtwork(payload);
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      submitBtn.textContent = "กำลังอัปโหลด...";
+      submitBtn.disabled = true;
 
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1.5"></i> อัปโหลดผลงาน';
-      }
+      const response = await fetch(url + "?action=uploadArtwork", {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(payload)
+      });
 
-      if (result && result.success) {
-        alert('อัปโหลดผลงานเรียบร้อยแล้ว!');
-        this.close();
-        if (typeof galleryComponent !== 'undefined' && galleryComponent.fetchAndRender) {
-          galleryComponent.fetchAndRender();
-        }
+      const result = await response.json();
+      if (result.success) {
+        alert("อัปโหลดผลงานสำเร็จ!");
+        uploadModalComponent.close();
+        location.reload(); // รีเฟรชหน้าจอเพื่อดึงข้อมูลใหม่มาแสดง
       } else {
-        alert('เกิดข้อผิดพลาด: ' + (result?.error || 'ไม่สามารถบันทึกข้อมูลได้'));
+        alert("อัปโหลดไม่สำเร็จ: " + (result.message || "เกิดข้อผิดพลาด"));
+        submitBtn.textContent = "ยืนยันอัปโหลด";
+        submitBtn.disabled = false;
       }
     } catch (err) {
-      if (submitBtn) {
+      console.error("Upload Error:", err);
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      if(submitBtn) {
+        submitBtn.textContent = "ยืนยันอัปโหลด";
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1.5"></i> อัปโหลดผลงาน';
       }
-      console.error('Upload Error:', err);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
     }
   }
-}
-
-// สร้าง Instance แยกเฉพาะตัว
-const uploadModalComponent = new UploadModalComponent();
+};
