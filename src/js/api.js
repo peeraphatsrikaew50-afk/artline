@@ -3,18 +3,18 @@ class ApiService {
     this.baseUrl = CONFIG.API_BASE_URL;
   }
 
-  // ฟังก์ชันยิง API หลักที่แก้ไขให้แยก Method และ Body ชัดเจน
+  // ฟังก์ชันส่ง HTTP Request หลัก
   async request(action, options = {}) {
     try {
       const method = options.method || 'GET';
       const bodyData = options.body ? options.body : null;
 
-      let url = `${this.baseUrl}?action=${action}`;
+      const url = `${this.baseUrl}?action=${action}`;
       
       const fetchOptions = {
         method: method,
         headers: {
-          'Content-Type': 'text/plain;charset=utf-8' // ป้องกัน CORS Preflight บน Google Apps Script
+          'Content-Type': 'text/plain;charset=utf-8' // ป้องกันปัญหา CORS Preflight กับ Google Apps Script
         }
       };
 
@@ -36,7 +36,7 @@ class ApiService {
     return this.request('getArtworks');
   }
 
-  // ดึงรายละเอียดผลงานเดี่ยว + เพิ่มยอดเข้าชม (Increment View)
+  // ดึงรายละเอียดผลงานเดี่ยว (และเพิ่ม ยอดเข้าชม/Views)
   async getArtworkDetail(id) {
     return this.request('getArtworkDetail', {
       method: 'POST',
@@ -60,7 +60,7 @@ class ApiService {
     });
   }
 
-  // ส่งความคิดเห็น
+  // ส่งความคิดเห็น (Comment)
   async addComment(artworkId, commentText, userRole) {
     return this.request('addComment', {
       method: 'POST',
