@@ -104,14 +104,16 @@ class UploadModalComponent {
     btn.disabled = true;
     btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัปโหลดภาพเข้า Google Drive...`;
 
+    // ⚠️ แก้ไขจุดสำคัญ: แนบ base64Data เพิ่มเติมเพื่อให้ตรงกับที่ GAS รอรับ
     const payload = {
       title: titleInput.value.trim(),
       description: descInput.value.trim(),
       categoryId: parseInt(catSelect.value) || 1,
       visibility: visSelect.value || 'Public',
+      base64Data: this.selectedFileBase64,  // เพิ่มตัวนี้ส่งเข้า GAS
       imageBase64: this.selectedFileBase64,
       fileName: this.selectedFileName || 'artwork.png',
-      userId: authManager.currentUser.userId
+      userId: authManager.currentUser ? authManager.currentUser.userId : 'guest'
     };
 
     const res = await apiService.request('createArtwork', {}, payload);
@@ -122,7 +124,7 @@ class UploadModalComponent {
     if (res.success) {
       showToast('อัปโหลดผลงานเข้าสู่ระบบเรียบร้อยแล้ว!', 'success');
       this.close();
-      galleryComponent.loadData();
+      if (window.galleryComponent) galleryComponent.loadData();
     } else {
       showToast('อัปโหลดไม่สำเร็จ: ' + (res.error || 'ข้อผิดพลาดเครือข่าย'), 'error');
     }
