@@ -1,151 +1,159 @@
 /**
- * uploadModal.js - Artwork Upload Modal & Image Drag-and-Drop Handler
+ * src/js/components/uploadModal.js
+ * จัดการ Modal อัปโหลดผลงานภาพวาด
  */
 
 class UploadModalComponent {
   constructor() {
+    this.modal = document.getElementById('upload-modal');
+    this.fileInput = document.getElementById('file-input');
+    this.dropArea = document.getElementById('drop-area');
+    this.previewImg = document.getElementById('image-preview');
+    this.dropText = document.getElementById('drop-text');
     this.selectedFileBase64 = null;
-    this.selectedFileName = '';
+    this.selectedFileType = null;
+    this.selectedFileName = null;
+
+    this.bindEvents();
   }
 
-  open() {
-    if (!authManager.canUpload()) {
-      showToast('เฉพาะบัญชีระดับ Artist หรือ Admin เท่านั้นที่สามารถอัปโหลดผลงานได้', 'error');
-      return;
-    }
+  bindEvents() {
+    if (!this.fileInput || !this.dropArea) return;
 
-    const modal = document.getElementById('upload-modal');
-    if (modal) {
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      this.bindDragDrop();
-    }
-  }
+    // เลือกไฟล์ผ่าน Input
+    this.fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) this.handleFileSelect(file);
+    });
 
-  close() {
-    const modal = document.getElementById('upload-modal');
-    if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      this.resetForm();
-    }
-  }
-
-  bindDragDrop() {
-    const dropArea = document.getElementById('drop-area');
-    const fileInput = document.getElementById('file-input');
-
-    if (!dropArea || !fileInput) return;
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      dropArea.addEventListener(eventName, (e) => {
+    // Drag & Drop File
+    ['dragenter', 'dragover'].forEach(eventName => {
+      this.dropArea.addEventListener(eventName, (e) => {
         e.preventDefault();
-        e.stopPropagation();
+        this.dropArea.classList.add('border-purple-500', 'bg-purple-500/10');
       }, false);
     });
 
-    ['dragenter', 'dragover'].forEach(eventName => {
-      dropArea.classList.add('border-purple-500', 'bg-purple-500/10');
-    });
-
     ['dragleave', 'drop'].forEach(eventName => {
-      dropArea.classList.remove('border-purple-500', 'bg-purple-500/10');
+      this.dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        this.dropArea.classList.remove('border-purple-500', 'bg-purple-500/10');
+      }, false);
     });
 
-    dropArea.addEventListener('drop', (e) => {
-      const files = e.dataTransfer.files;
-      if (files.length) this.handleFile(files[0]);
-    });
-
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length) this.handleFile(e.target.files[0]);
+    this.dropArea.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const file = dt.files[0];
+      if (file) this.handleFileSelect(file);
     });
   }
 
-  handleFile(file) {
+  handleFileSelect(file) {
     if (!file.type.startsWith('image/')) {
-      showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น (PNG, JPG, WebP)', 'error');
+      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
       return;
     }
 
+    this.selectedFileType = file.type;
     this.selectedFileName = file.name;
+
     const reader = new FileReader();
     reader.onload = (e) => {
       this.selectedFileBase64 = e.target.result;
-      const preview = document.getElementById('image-preview');
-      const dropText = document.getElementById('drop-text');
-      
-      if (preview) {
-        preview.src = e.target.result;
-        preview.classList.remove('hidden');
+      if (this.previewImg) {
+        this.previewImg.src = e.target.result;
+        this.previewImg.classList.remove('hidden');
       }
-      if (dropText) dropText.classList.add('hidden');
+      if (this.dropText) {
+        this.dropText.classList.add('hidden');
+      }
     };
     reader.readAsDataURL(file);
   }
 
-  async submitUpload() {
-    const titleInput = document.getElementById('upload-title');
-    const descInput = document.getElementById('upload-desc');
-    const catSelect = document.getElementById('upload-category');
-    const visSelect = document.getElementById('upload-visibility');
-    const btn = document.getElementById('btn-submit-upload');
-
-    if (!titleInput.value.trim()) {
-      showToast('กรุณากรอกชื่อผลงานภาพวาด', 'error');
-      return;
+  open() {
+    if (this.modal) {
+      this.modal.classList.remove('hidden');
+      this.modal.classList.add('flex');
     }
+  }
 
-    if (!this.selectedFileBase64) {
-      showToast('กรุณาเลือกหรืออัปโหลดไฟล์รูปภาพ', 'error');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัปโหลดภาพเข้า Google Drive...`;
-
-    // ⚠️ แก้ไขจุดสำคัญ: แนบ base64Data เพิ่มเติมเพื่อให้ตรงกับที่ GAS รอรับ
-    const payload = {
-      title: titleInput.value.trim(),
-      description: descInput.value.trim(),
-      categoryId: parseInt(catSelect.value) || 1,
-      visibility: visSelect.value || 'Public',
-      base64Data: this.selectedFileBase64,  // เพิ่มตัวนี้ส่งเข้า GAS
-      imageBase64: this.selectedFileBase64,
-      fileName: this.selectedFileName || 'artwork.png',
-      userId: authManager.currentUser ? authManager.currentUser.userId : 'guest'
-    };
-
-    const res = await apiService.request('createArtwork', {}, payload);
-
-    btn.disabled = false;
-    btn.innerHTML = `<i class="fas fa-cloud-upload-alt mr-2"></i> อัปโหลดผลงาน`;
-
-    if (res.success) {
-      showToast('อัปโหลดผลงานเข้าสู่ระบบเรียบร้อยแล้ว!', 'success');
-      this.close();
-      if (window.galleryComponent) galleryComponent.loadData();
-    } else {
-      showToast('อัปโหลดไม่สำเร็จ: ' + (res.error || 'ข้อผิดพลาดเครือข่าย'), 'error');
+  close() {
+    if (this.modal) {
+      this.modal.classList.add('hidden');
+      this.modal.classList.remove('flex');
+      this.resetForm();
     }
   }
 
   resetForm() {
     this.selectedFileBase64 = null;
-    this.selectedFileName = '';
-    const titleInput = document.getElementById('upload-title');
-    const descInput = document.getElementById('upload-desc');
-    const preview = document.getElementById('image-preview');
-    const dropText = document.getElementById('drop-text');
-
-    if (titleInput) titleInput.value = '';
-    if (descInput) descInput.value = '';
-    if (preview) {
-      preview.src = '';
-      preview.classList.add('hidden');
+    this.selectedFileType = null;
+    this.selectedFileName = null;
+    if (this.fileInput) this.fileInput.value = '';
+    if (this.previewImg) {
+      this.previewImg.src = '';
+      this.previewImg.classList.add('hidden');
     }
-    if (dropText) dropText.classList.remove('hidden');
+    if (this.dropText) this.dropText.classList.remove('hidden');
+    
+    document.getElementById('upload-title').value = '';
+    document.getElementById('upload-desc').value = '';
+  }
+
+  async submitUpload() {
+    const title = document.getElementById('upload-title').value.trim();
+    const desc = document.getElementById('upload-desc').value.trim();
+    const categoryId = document.getElementById('upload-category').value;
+    const visibility = document.getElementById('upload-visibility').value;
+    const submitBtn = document.getElementById('btn-submit-upload');
+
+    if (!this.selectedFileBase64) {
+      alert('กรุณาเลือกไฟล์รูปภาพ');
+      return;
+    }
+
+    if (!title) {
+      alert('กรุณากรอกชื่อผลงาน');
+      return;
+    }
+
+    // ล็อกปุ่มป้องกันการกดซ้ำ
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัปโหลด...';
+    }
+
+    const payload = {
+      title: title,
+      description: desc,
+      categoryId: categoryId,
+      visibility: visibility,
+      fileBase64: this.selectedFileBase64,
+      fileType: this.selectedFileType,
+      fileName: this.selectedFileName,
+      artistName: typeof authService !== 'undefined' ? authService.getUserName() : 'Anonymous'
+    };
+
+    // ส่งข้อมูลไปที่ API
+    const result = await apiService.uploadArtwork(payload);
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1.5"></i> อัปโหลดผลงาน';
+    }
+
+    if (result && result.success) {
+      alert('อัปโหลดผลงานเรียบร้อยแล้ว!');
+      this.close();
+      if (typeof galleryComponent !== 'undefined') {
+        galleryComponent.fetchAndRender();
+      }
+    } else {
+      alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + (result.error || 'ไม่สามารถเชื่อมต่อไดรฟ์ได้'));
+    }
   }
 }
 
+// สร้าง Instance หลักสำหรับใช้งาน
 const uploadModalComponent = new UploadModalComponent();
