@@ -5,6 +5,7 @@ class ArtworkModalComponent {
     this.currentArtwork = null;
   }
 
+  // เปิด Modal และดึงข้อมูลใหม่
   async open(artworkId) {
     if (!this.modalEl || !this.contentEl) return;
 
@@ -19,14 +20,13 @@ class ArtworkModalComponent {
 
     try {
       const response = await apiService.getArtworkDetail(artworkId);
-      console.log('API Response:', response); // Log ดูค่าที่ส่งกลับมาจาก GAS
+      console.log('API Response:', response); // ตรวจสอบโครงสร้างข้อมูลใน Console
 
-      // รองรับทั้ง response.data และ response ตรงๆ
       if (response && (response.success || response.id || response.data)) {
         this.currentArtwork = response.data || response;
         this.render();
       } else {
-        this.contentEl.innerHTML = `<div class="p-8 text-center text-red-400">ไม่สามารถโหลดข้อมูลผลงานได้ (โครงสร้างข้อมูลไม่ถูกต้อง)</div>`;
+        this.contentEl.innerHTML = `<div class="p-8 text-center text-red-400">ไม่สามารถโหลดข้อมูลผลงานได้</div>`;
       }
     } catch (err) {
       console.error(err);
@@ -40,9 +40,14 @@ class ArtworkModalComponent {
     this.modalEl.classList.remove('flex');
   }
 
+  // แสดงผล UI ภายใน Modal พร้อม Image Fallback ป้องกันรูปพัง
   render() {
     const item = this.currentArtwork;
     if (!item) return;
+
+    // กำหนด รูปสำรอง กรณีพาธรูปต้นทางเสียหรือส่งกลับมาเป็น 404
+    const defaultImage = 'https://placehold.co/600x600/1e293b/64748b?text=Image+Not+Found';
+    const displayImage = item.imageUrl && item.imageUrl.trim() !== '' ? item.imageUrl : defaultImage;
 
     const commentsHtml = (item.comments && Array.isArray(item.comments)) 
       ? item.comments.map(c => `
@@ -62,10 +67,15 @@ class ArtworkModalComponent {
           <i class="fas fa-times"></i>
         </button>
 
+        <!-- แสดงภาพผลงาน พร้อม onerror เพื่อเปลี่ยนไปใช้รูปสำรองอัตโนมัติ -->
         <div class="md:w-3/5 bg-slate-950 flex items-center justify-center p-4 min-h-[300px]">
-          <img src="${item.imageUrl || ''}" alt="${item.title || ''}" class="max-h-[75vh] w-auto object-contain rounded-lg">
+          <img src="${displayImage}" 
+               onerror="this.onerror=null; this.src='${defaultImage}';" 
+               alt="${item.title || ''}" 
+               class="max-h-[75vh] w-auto object-contain rounded-lg">
         </div>
 
+        <!-- รายละเอียดและปุ่มโต้ตอบ -->
         <div class="md:w-2/5 p-6 flex flex-col justify-between bg-slate-900/40 space-y-4 overflow-y-auto">
           <div class="space-y-4">
             <div>
@@ -78,6 +88,7 @@ class ArtworkModalComponent {
 
             <p class="text-slate-300 text-xs leading-relaxed">${item.description || 'ไม่มีคำอธิบายผลงาน'}</p>
 
+            <!-- ปุ่ม ไลก์ / บันทึก / ยอดเข้าชม -->
             <div class="flex items-center justify-between pt-2 border-t border-slate-800">
               <div class="flex items-center gap-2">
                 <button onclick="artworkModalComponent.toggleLike()" class="px-3 py-1.5 bg-pink-600/20 hover:bg-pink-600/30 text-pink-400 border border-pink-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
@@ -90,6 +101,7 @@ class ArtworkModalComponent {
               <span class="text-xs text-slate-400"><i class="fas fa-eye mr-1"></i> ${item.views || 0} ยอดเข้าชม</span>
             </div>
 
+            <!-- กล่องความคิดเห็น -->
             <div class="space-y-2 pt-2 border-t border-slate-800">
               <h4 class="text-xs font-bold text-slate-300">ความคิดเห็น (${(item.comments && item.comments.length) || 0})</h4>
               <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -98,6 +110,7 @@ class ArtworkModalComponent {
             </div>
           </div>
 
+          <!-- ช่องพิมพ์คอมเมนต์ -->
           <div class="pt-2 border-t border-slate-800 flex gap-2">
             <input type="text" id="modal-comment-input" placeholder="เขียนความคิดเห็น..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
             <button onclick="artworkModalComponent.submitComment()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-xl text-xs font-semibold transition">
@@ -109,6 +122,7 @@ class ArtworkModalComponent {
     `;
   }
 
+  // กดถูกใจ
   async toggleLike() {
     if (!this.currentArtwork) return;
     const role = (window.authService && window.authService.getCurrentRole) ? window.authService.getCurrentRole() : 'Guest';
@@ -121,6 +135,7 @@ class ArtworkModalComponent {
     } catch (e) { console.error(e); }
   }
 
+  // บันทึกรายการโปรด
   async toggleFavorite() {
     if (!this.currentArtwork) return;
     const role = (window.authService && window.authService.getCurrentRole) ? window.authService.getCurrentRole() : 'Guest';
@@ -132,6 +147,7 @@ class ArtworkModalComponent {
     } catch (e) { console.error(e); }
   }
 
+  // ส่งคอมเมนต์
   async submitComment() {
     const input = document.getElementById('modal-comment-input');
     if (!input || !input.value.trim() || !this.currentArtwork) return;
