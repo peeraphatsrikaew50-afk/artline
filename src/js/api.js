@@ -4,7 +4,7 @@
 
 class ApiService {
   constructor() {
-    // ✅ เพิ่มเครื่องหมายคำพูดเรียบร้อยแล้วครับ
+    // 📍 บรรทัดที่ 7: ใส่ Web App URL ตรงนี้ครับ
     this.apiUrl = "https://script.google.com/macros/s/AKfycbwxsa4BrvFNa_v6ASozhsfIbJY0p6XgTlLFMccA88dFA8vt7xgEz7cw5jFvE4qI3zlW/exec";
   }
 
