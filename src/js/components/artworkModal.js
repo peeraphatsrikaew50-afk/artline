@@ -47,7 +47,8 @@ class ArtworkModalComponent {
   renderModalContent(art, comments) {
     const content = document.getElementById('artwork-modal-content');
     
-    html = `
+    // ✅ เพิ่ม const หน้าตัวแปร html เพื่อแก้ไข ReferenceError
+    const html = `
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-h-[85vh] overflow-y-auto">
         <!-- Image Lightbox Section -->
         <div class="lg:col-span-7 flex flex-col justify-center items-center bg-slate-900/60 rounded-xl overflow-hidden p-2 border border-slate-700/50">
