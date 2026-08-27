@@ -1,9 +1,10 @@
 /**
  * API Service Component
+ * จัดการการเชื่อมต่อและรับส่งข้อมูลระหว่างหน้าเว็บกับ Google Apps Script
  */
 
-const API = {
-  // ดึงรายการภาพวาดทั้งหมด
+const apiService = {
+  // ดึงรายการภาพวาดทั้งหมดจาก Google Sheets
   async getArtworks() {
     try {
       const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getArtworks`);
@@ -15,10 +16,10 @@ const API = {
     }
   },
 
-  // อัปโหลดภาพวาดใหม่
+  // อัปโหลดภาพวาดใหม่เข้า Google Drive และบันทึกข้อมูลลง Google Sheets
   async uploadArtwork(payload) {
     try {
-      // ใช้ text/plain เพื่อป้องกันการบล็อก CORS จาก Google Apps Script
+      // ใช้ Content-Type เป็น text/plain;charset=utf-8 เพื่อเลี่ยงปัญหาการบล็อก CORS จาก Google Apps Script
       const response = await fetch(CONFIG.SCRIPT_URL, {
         method: "POST",
         headers: {
@@ -38,3 +39,6 @@ const API = {
     }
   }
 };
+
+// ประกาศ Alias ตัวแปรเพิ่มเติมเพื่อป้องกันปัญหากรณีไฟล์อื่นเรียกใช้ชื่อ API แบบตัวพิมพ์ใหญ่
+const API = apiService;
