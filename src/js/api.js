@@ -4,8 +4,8 @@
 
 class ApiService {
   constructor() {
-    // 📍 Web App URL ใหม่ล่าสุด
-    this.apiUrl = "https://script.google.com/macros/s/AKfycbzERGsCUmM6Tn1UCUA2XWPFxs8WU51aVTLl0xWDRRgPzbXfUngK-3p_UXMMXaTC9zQB/exec";
+    // 📍 Web App URL ใหม่ล่าสุด (New Deployment)
+    this.apiUrl = "https://script.google.com/macros/s/AKfycbxrYtqMWPy0OZoOJkB9iDtvEmT81kyomOgXDmo09fbXKeRBuYRJ3O59L1gNDzonnVGO/exec";
   }
 
   /**
