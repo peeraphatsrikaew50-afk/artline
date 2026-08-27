@@ -4,7 +4,8 @@
 
 class ApiService {
   constructor() {
-    this.apiUrl = https://script.google.com/macros/s/AKfycbwxsa4BrvFNa_v6ASozhsfIbJY0p6XgTlLFMccA88dFA8vt7xgEz7cw5jFvE4qI3zlW/exec;
+    // ✅ เพิ่มเครื่องหมายคำพูดเรียบร้อยแล้วครับ
+    this.apiUrl = "https://script.google.com/macros/s/AKfycbwxsa4BrvFNa_v6ASozhsfIbJY0p6XgTlLFMccA88dFA8vt7xgEz7cw5jFvE4qI3zlW/exec";
   }
 
   /**
