@@ -4,7 +4,7 @@
 
 class ApiService {
   constructor() {
-    this.apiUrl = CONFIG.GAS_WEB_APP_URL;
+    this.apiUrl = https://script.google.com/macros/s/AKfycbwxsa4BrvFNa_v6ASozhsfIbJY0p6XgTlLFMccA88dFA8vt7xgEz7cw5jFvE4qI3zlW/exec;
   }
 
   /**
@@ -12,7 +12,7 @@ class ApiService {
    */
   async request(action, params = {}, postBody = null, attempt = 1) {
     try {
-      let url = `${CONFIG.GAS_WEB_APP_URL}?action=${encodeURIComponent(action)}`;
+      let url = `${this.apiUrl}?action=${encodeURIComponent(action)}`;
       
       // ต่อ Query Parameters
       Object.keys(params).forEach(key => {
