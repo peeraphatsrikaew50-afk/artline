@@ -4,15 +4,15 @@
  */
 
 const apiService = {
-  // ฟังก์ชันสเปกกลางสำหรับเรียก API ทั่วไป (แก้ปัญหา apiService.request is not a function)
+  // ฟังก์ชันสเปกกลางสำหรับรองรับการเรียกใช้แบบ .request()
   async request(action, payload = null) {
     try {
       if (payload) {
-        // กรณีส่งข้อมูลแบบ POST
+        // กรณีส่งข้อมูลแบบ POST (อัปโหลดรูปภาพ)
         const response = await fetch(CONFIG.SCRIPT_URL, {
           method: "POST",
           headers: {
-            "Content-Type": "text/plain;charset=utf-8",
+            "Content-Type": "text/plain;charset=utf-8", // เลี่ยงปัญหา CORS
           },
           body: JSON.stringify({
             action: action,
@@ -31,16 +31,16 @@ const apiService = {
     }
   },
 
-  // ดึงรายการภาพวาดทั้งหมด
+  // ดึงรายการภาพวาดทั้งหมดจาก Google Sheets
   async getArtworks() {
     return await this.request("getArtworks");
   },
 
-  // อัปโหลดภาพวาดใหม่
+  // อัปโหลดภาพวาดใหม่เข้า Google Drive
   async uploadArtwork(payload) {
     return await this.request("uploadArtwork", payload);
   }
 };
 
-// ประกาศ Alias ตัวแปรเพื่อรองรับการเรียกใช้แบบตัวพิมพ์ใหญ่
+// ประกาศ Alias ป้องกันไฟล์อื่นเรียกใช้ตัวแปรชื่อ API แบบตัวพิมพ์ใหญ่
 const API = apiService;
