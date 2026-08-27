@@ -1,7 +1,5 @@
-/**
- * src/js/config.js - Configuration File
- */
+// ==========================================
+// CONFIGURATION (Google Apps Script Web App URL)
+// ==========================================
 
-const CONFIG = {
-  API_BASE_URL: "https://script.google.com/macros/s/AKfycbxMv5yT3L8CAMMOC0-dvrzANhR5p5h7zj7rUsN3KwvAFKWgVgPrdfs44it49FP_flBX/exec"
-};
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxMv5yT3L8CAMMOC0-dvrzANhR5p5h7zj7rUsN3KwvAFKWgVgPrdfs44it49FP_flBX/exec";
